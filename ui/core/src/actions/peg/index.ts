@@ -1,4 +1,4 @@
-import { UsecaseContext } from "..";
+import { ActionContext } from "..";
 import {
   Address,
   Asset,
@@ -27,12 +27,12 @@ function isOriginallySifchainNativeToken(asset: Asset) {
 export type PegConfig = { ethConfirmations: number };
 
 export default ({
-  services,
+  api,
   store,
-}: UsecaseContext<
+}: ActionContext<
   // Once we have moved all interactors to their own files this can be
-  // UsecaseContext<any,any> or renamed to InteractorContext<any,any>
-  "sif" | "ethbridge" | "bus" | "eth", // Select the services you want to access
+  // ActionContext<any,any> or renamed to InteractorContext<any,any>
+  "SifService" | "EthbridgeService" | "EventBusService" | "EthereumService", // Select the services you want to access
   "wallet" | "tx" // Select the store keys you want to access
 >) => {
   const config: PegConfig = {
@@ -43,7 +43,7 @@ export default ({
   };
 
   // Create the context for passing to commands, queries and subscriptions
-  const ctx = { services, store, config };
+  const ctx = { api, store, config };
 
   /* 
     TODO: suggestion externalize all interactors injecting ctx would look like the following
@@ -69,11 +69,11 @@ export default ({
     subscribeToUnconfirmedPegTxs: SubscribeToUnconfirmedPegTxs(ctx),
 
     getSifTokens() {
-      return services.sif.getSupportedTokens();
+      return api.SifService.getSupportedTokens();
     },
 
     getEthTokens() {
-      return services.eth.getSupportedTokens();
+      return api.EthereumService.getSupportedTokens();
     },
 
     calculateUnpegFee(asset: IAsset) {
@@ -86,8 +86,8 @@ export default ({
 
     async unpeg(assetAmount: IAssetAmount) {
       const lockOrBurnFn = isOriginallySifchainNativeToken(assetAmount.asset)
-        ? services.ethbridge.lockToEthereum
-        : services.ethbridge.burnToEthereum;
+        ? api.EthbridgeService.lockToEthereum
+        : api.EthbridgeService.burnToEthereum;
 
       const feeAmount = this.calculateUnpegFee(assetAmount.asset);
 
@@ -107,10 +107,10 @@ export default ({
         feeAmount,
       );
 
-      const txStatus = await services.sif.signAndBroadcast(tx.value.msg);
+      const txStatus = await api.SifService.signAndBroadcast(tx.value.msg);
 
       if (txStatus.state !== "accepted") {
-        services.bus.dispatch({
+        api.EventBusService.dispatch({
           type: "PegTransactionErrorEvent",
           payload: {
             txStatus,
@@ -134,7 +134,7 @@ export default ({
     //       This has been done for convenience but we should not have to know in the view that
     //       approval is required before pegging as that is very much business domain knowledge
     async approve(address: Address, assetAmount: IAssetAmount) {
-      return await services.ethbridge.approveBridgeBankSpend(
+      return await api.EthbridgeService.approveBridgeBankSpend(
         address,
         assetAmount,
       );
@@ -145,7 +145,7 @@ export default ({
         assetAmount.asset.network === Network.ETHEREUM &&
         !isSupportedEVMChain(store.wallet.eth.chainId)
       ) {
-        services.bus.dispatch({
+        api.EventBusService.dispatch({
           type: "ErrorEvent",
           payload: {
             message: "EVM Network not supported!",
@@ -160,8 +160,8 @@ export default ({
       const subscribeToTx = SubscribeToTx(ctx);
 
       const lockOrBurnFn = isOriginallySifchainNativeToken(assetAmount.asset)
-        ? services.ethbridge.burnToSifchain
-        : services.ethbridge.lockToSifchain;
+        ? api.EthbridgeService.burnToSifchain
+        : api.EthbridgeService.lockToSifchain;
 
       return await new Promise<TransactionStatus>((done) => {
         const pegTx = lockOrBurnFn(

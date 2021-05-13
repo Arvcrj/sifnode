@@ -1,8 +1,8 @@
-import createActions from "./eth";
+import createActions from "./ethWallet";
 
-import { Address, Asset, Network, TxParams } from "../../entities";
+import { Address, Asset, Network, TxParams } from "../entities";
 import { Msg } from "@cosmjs/launchpad";
-import { IWalletService } from "../../services/IWalletService";
+import { IWalletService } from "../api/IWalletService";
 let mockEthereumService: IWalletService & {};
 let mockEventBusService: any;
 let ethWalletActions: ReturnType<typeof createActions>;
@@ -35,9 +35,9 @@ beforeEach(() => {
   };
 
   ethWalletActions = createActions({
-    services: {
-      eth: mockEthereumService,
-      bus: mockEventBusService,
+    api: {
+      EthereumService: mockEthereumService,
+      EventBusService: mockEventBusService,
     },
     store: {
       asset: { topTokens: [] },

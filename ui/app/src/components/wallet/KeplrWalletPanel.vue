@@ -8,10 +8,10 @@ export default defineComponent({
   name: "KeplrWalletController",
   components: { SifButton, Icon },
   setup() {
-    const { store, usecases } = useCore();
+    const { store, actions } = useCore();
     async function handleConnectClicked() {
       try {
-        await usecases.wallet.sif.connectToWallet();
+        await actions.wallet.connectToWallet();
       } catch (error) {
         console.log("KeplrWalletController", error);
       }

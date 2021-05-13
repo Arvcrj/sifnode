@@ -1,29 +1,29 @@
 import { IAsset, IAssetAmount } from "../../entities";
-import { UsecaseContext } from "..";
+import { ActionContext } from "..";
 import { PoolStore } from "../../store/pools";
 import { effect } from "@vue/reactivity";
 
 export default ({
-  services,
+  api,
   store,
-}: UsecaseContext<
-  "sif" | "clp" | "bus",
+}: ActionContext<
+  "SifService" | "ClpService" | "EventBusService",
   "pools" | "wallet" | "accountpools"
 >) => {
-  const state = services.sif.getState();
+  const state = api.SifService.getState();
 
   async function syncPools() {
-    const state = services.sif.getState();
+    const state = api.SifService.getState();
 
     // UPdate pools
-    const pools = await services.clp.getPools();
+    const pools = await api.ClpService.getPools();
     for (let pool of pools) {
       store.pools[pool.symbol()] = pool;
     }
 
     // Update lp pools
     if (state.address) {
-      const accountPoolSymbols = await services.clp.getPoolSymbolsByLiquidityProvider(
+      const accountPoolSymbols = await api.ClpService.getPoolSymbolsByLiquidityProvider(
         state.address,
       );
 
@@ -31,7 +31,7 @@ export default ({
       // Ideally we would have a better rest endpoint design
 
       accountPoolSymbols.forEach(async (symbol) => {
-        const lp = await services.clp.getLiquidityProvider({
+        const lp = await api.ClpService.getLiquidityProvider({
           symbol,
           lpAddress: state.address,
         });
@@ -62,7 +62,7 @@ export default ({
   syncPools().then(() => {
     effect(() => {
       if (Object.keys(store.pools).length === 0) {
-        services.bus.dispatch({
+        api.EventBusService.dispatch({
           type: "NoLiquidityPoolsFoundEvent",
           payload: {},
         });
@@ -72,7 +72,7 @@ export default ({
 
   // Then every transaction
 
-  services.sif.onNewBlock(async () => {
+  api.SifService.onNewBlock(async () => {
     await syncPools();
   });
 
@@ -96,17 +96,17 @@ export default ({
     ) {
       if (!state.address) throw "No from address provided for swap";
 
-      const tx = await services.clp.swap({
+      const tx = await api.ClpService.swap({
         fromAddress: state.address,
         sentAmount,
         receivedAsset,
         minimumReceived,
       });
 
-      const txStatus = await services.sif.signAndBroadcast(tx.value.msg);
+      const txStatus = await api.SifService.signAndBroadcast(tx.value.msg);
 
       if (txStatus.state !== "accepted") {
-        services.bus.dispatch({
+        api.EventBusService.dispatch({
           type: "TransactionErrorEvent",
           payload: {
             txStatus,
@@ -130,8 +130,8 @@ export default ({
       );
 
       const provideLiquidity = hasPool
-        ? services.clp.addLiquidity
-        : services.clp.createPool;
+        ? api.ClpService.addLiquidity
+        : api.ClpService.createPool;
 
       const tx = await provideLiquidity({
         fromAddress: state.address,
@@ -139,9 +139,9 @@ export default ({
         externalAssetAmount,
       });
 
-      const txStatus = await services.sif.signAndBroadcast(tx.value.msg);
+      const txStatus = await api.SifService.signAndBroadcast(tx.value.msg);
       if (txStatus.state !== "accepted") {
-        services.bus.dispatch({
+        api.EventBusService.dispatch({
           type: "TransactionErrorEvent",
           payload: {
             txStatus,
@@ -157,17 +157,17 @@ export default ({
       wBasisPoints: string,
       asymmetry: string,
     ) {
-      const tx = await services.clp.removeLiquidity({
+      const tx = await api.ClpService.removeLiquidity({
         fromAddress: state.address,
         asset,
         asymmetry,
         wBasisPoints,
       });
 
-      const txStatus = await services.sif.signAndBroadcast(tx.value.msg);
+      const txStatus = await api.SifService.signAndBroadcast(tx.value.msg);
 
       if (txStatus.state !== "accepted") {
-        services.bus.dispatch({
+        api.EventBusService.dispatch({
           type: "TransactionErrorEvent",
           payload: {
             txStatus,
@@ -180,7 +180,7 @@ export default ({
     },
 
     async disconnect() {
-      services.sif.purgeClient();
+      api.SifService.purgeClient();
     },
   };
 

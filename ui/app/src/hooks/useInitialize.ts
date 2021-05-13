@@ -3,10 +3,10 @@ import { useCore } from "./useCore";
 import { useSubscription } from "./useSubscrition";
 
 export function useInitialize() {
-  const { usecases, store } = useCore();
+  const { actions, store } = useCore();
   // initialize subscriptions
   useSubscription(
     computed(() => store.wallet.eth.address), // Needs a ref
-    usecases.peg.subscribeToUnconfirmedPegTxs,
+    actions.peg.subscribeToUnconfirmedPegTxs,
   );
 }

@@ -1,12 +1,7 @@
 import { ref, Ref } from "@vue/reactivity";
 
-import {
-  Amount,
-  AssetAmount,
-  LiquidityProvider,
-  Pool,
-} from "../../../entities";
-import { getTestingTokens } from "../../../test/utils/getTestingToken";
+import { Amount, AssetAmount, LiquidityProvider, Pool } from "../entities";
+import { getTestingTokens } from "../test/utils/getTestingToken";
 import { PoolState } from "./addLiquidityCalculator";
 import { useRemoveLiquidityCalculator } from "./removeLiquidityCalculator";
 

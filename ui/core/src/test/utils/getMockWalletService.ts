@@ -1,4 +1,4 @@
-import { IWalletService } from "../../services/IWalletService";
+import { IWalletService } from "../../api/IWalletService";
 import { IAssetAmount } from "../../entities";
 
 export function getMockWalletService(

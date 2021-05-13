@@ -1,7 +1,7 @@
 import {
   createStore,
-  createServices,
-  createUsecases,
+  createApi,
+  createActions,
   createPoolFinder,
   getConfig,
 } from "ui-core";
@@ -12,9 +12,9 @@ const config = getConfig(
   process.env.VUE_APP_ETHEREUM_ASSET_TAG,
 );
 
-const services = createServices(config);
+const api = createApi(config);
 const store = createStore();
-const usecases = createUsecases({ store, services });
+const actions = createActions({ store, api });
 const poolFinder = createPoolFinder(store);
 
 // expose store on window so it is easy to inspect
@@ -60,8 +60,8 @@ Object.defineProperty(window, "store", {
 export function useCore() {
   return {
     store,
-    services,
-    usecases,
+    api,
+    actions,
     poolFinder,
     config,
   };

@@ -1,13 +1,13 @@
 import { reactive } from "@vue/reactivity";
-import { UsecaseContext } from "../..";
-import { PegTxEventEmitter } from "../../../services/EthbridgeService/PegTxEventEmitter";
+import { ActionContext } from "../..";
+import { PegTxEventEmitter } from "../../../api/EthbridgeService/PegTxEventEmitter";
 import { TransactionStatus } from "../../../entities";
 
 // Using PascalCase to signify this is a factory
 export function SubscribeToTx({
-  services,
+  api,
   store,
-}: UsecaseContext<"bus", "wallet" | "tx">) {
+}: ActionContext<"EventBusService", "wallet" | "tx">) {
   // Helper to set store tx status
   // Should this live behind a store service API?
   function storeSetTxStatus(
@@ -40,7 +40,7 @@ export function SubscribeToTx({
         symbol: tx.symbol,
       });
 
-      services.bus.dispatch({
+      api.EventBusService.dispatch({
         type: "PegTransactionPendingEvent",
         payload: {
           hash: txHash,
@@ -55,7 +55,7 @@ export function SubscribeToTx({
         state: "completed",
       });
 
-      services.bus.dispatch({
+      api.EventBusService.dispatch({
         type: "PegTransactionCompletedEvent",
         payload: {
           hash: txHash,
@@ -73,7 +73,7 @@ export function SubscribeToTx({
         state: "failed",
       });
 
-      services.bus.dispatch({
+      api.EventBusService.dispatch({
         type: "PegTransactionErrorEvent",
         payload: {
           txStatus: {
